@@ -4,6 +4,7 @@
 int
 main(int argc, char *argv[])
 {
+    printf(1, "XV6_TEST_OUTPUT: this should print\n");
     volatile char *p = (char *)0;
 
     *p; //page fault trap 14 should occur here

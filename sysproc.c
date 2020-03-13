@@ -89,3 +89,82 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+//jps - created mprotect syscall process
+//This system call will take an address and remove user
+//Write permissions for it and len pages after it
+int
+sys_mprotect(void)
+{
+  //Get system call arguments
+  char* addr = 0;
+  int len;
+
+  argptr(0, &addr, sizeof(void*));
+  argint(1, &len);
+  
+  //argument checking: len bounds, addr bounds, addr alignmnet
+  if(len == 0 || len < 0)
+    return -1;
+
+  if((uint)addr < 0 || (uint)addr == KERNBASE || (uint)addr > KERNBASE)
+    return -1;
+	
+  if(((unsigned long)addr & 15) != 0)
+    return -1;
+
+  //get page table entry and change permissions
+  pde_t *pde;
+  pte_t *pgtab;
+  pte_t *pte;
+
+  pde = &(myproc()->pgdir)[PDX(addr)];
+  pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+
+  pte = &pgtab[PTX(addr)];
+  *pte &= ~PTE_W;
+  
+  //tell the hardware that the page table has changed
+  lcr3(V2P(myproc()->pgdir));
+
+  return 0;
+}
+
+//jps - created munprotect syscall process
+//This system call will take address and grant user
+//Write permissions for it and len pages after it
+int
+sys_munprotect(void)
+{
+  //Get system call arguments
+  char* addr = 0;
+  int len;
+  
+  argptr(0, &addr, sizeof(void*));
+  argint(1, &len);
+
+  //argument checking: len bounds, addr bounds, addr alignmnet
+  if(len == 0 || len < 0)
+    return -1;
+
+  if((uint)addr < 0 || (uint)addr == KERNBASE || (uint)addr > KERNBASE)
+    return -1;
+	
+  if(((unsigned long)addr & 15) != 0)
+    return -1;
+  //get page table entry and change permissions
+  pde_t *pde;
+  pte_t *pgtab;
+  pte_t *pte;
+
+  pde = &(myproc()->pgdir)[PDX(addr)];
+  pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
+
+  pte = &pgtab[PTX(addr)];
+  *pte |= PTE_W;
+  
+  //tell the hardware that the page table has changed
+  lcr3(V2P(myproc()->pgdir));
+
+  return 0;
+}

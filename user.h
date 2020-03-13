@@ -23,6 +23,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int mprotect(void*, int);	//jps - added mprotect function def
+int munprotect(void*, int);	//jps - added munprotect function def
 
 // ulib.c
 int stat(const char*, struct stat*);

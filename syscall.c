@@ -103,6 +103,8 @@ extern int sys_unlink(void);
 extern int sys_wait(void);
 extern int sys_write(void);
 extern int sys_uptime(void);
+extern int sys_mprotect(void);		//jps - added extern function def for sys_mprotect
+extern int sys_munprotect(void);	//jps - added extern function def for sys_munprotect
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -126,6 +128,8 @@ static int (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
+[SYS_mprotect]		sys_mprotect,	//jps - added sys_mprotect to syscalls[]
+[SYS_munprotect]	sys_munprotect,	//jps - added sys_munprotect to syscalls[]
 };
 
 void
