@@ -100,11 +100,13 @@ sys_mprotect(void)
   char* addr = 0;
   int len;
 
-  argptr(0, &addr, sizeof(void*));
-  argint(1, &len);
+  if(argptr(0, &addr, sizeof(void*)) < 0)
+    return -1;
+  if(argint(1, &len) < 0)
+    return -1;
   
   //argument checking: len bounds, addr bounds, addr alignmnet
-  if(len == 0 || len < 0)
+  if(len == 0 || len < 0 || len > myproc()->sz)
     return -1;
 
   if((uint)addr < 0 || (uint)addr == KERNBASE || (uint)addr > KERNBASE)
@@ -121,8 +123,12 @@ sys_mprotect(void)
   pde = &(myproc()->pgdir)[PDX(addr)];
   pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
 
-  pte = &pgtab[PTX(addr)];
-  *pte &= ~PTE_W;
+  // change protection bits for "len" pages
+  for(int i = 0; i < len; i++)
+  {
+    pte = &pgtab[PTX(addr + i)];
+    *pte &= ~PTE_W;
+  }
   
   //tell the hardware that the page table has changed
   lcr3(V2P(myproc()->pgdir));
@@ -140,11 +146,13 @@ sys_munprotect(void)
   char* addr = 0;
   int len;
   
-  argptr(0, &addr, sizeof(void*));
-  argint(1, &len);
+  if(argptr(0, &addr, sizeof(void*)) < 0)
+    return -1;
+  if(argint(1, &len) < 0)
+    return -1;
 
   //argument checking: len bounds, addr bounds, addr alignmnet
-  if(len == 0 || len < 0)
+  if(len == 0 || len < 0 || len > myproc()->sz)
     return -1;
 
   if((uint)addr < 0 || (uint)addr == KERNBASE || (uint)addr > KERNBASE)
@@ -152,6 +160,7 @@ sys_munprotect(void)
 	
   if(((unsigned long)addr & 15) != 0)
     return -1;
+
   //get page table entry and change permissions
   pde_t *pde;
   pte_t *pgtab;
@@ -160,8 +169,11 @@ sys_munprotect(void)
   pde = &(myproc()->pgdir)[PDX(addr)];
   pgtab = (pte_t*)P2V(PTE_ADDR(*pde));
 
-  pte = &pgtab[PTX(addr)];
-  *pte |= PTE_W;
+  for(int i = 0; i < len; i++)
+  {
+    pte = &pgtab[PTX(addr + i)];
+    *pte |= PTE_W;
+  }
   
   //tell the hardware that the page table has changed
   lcr3(V2P(myproc()->pgdir));
